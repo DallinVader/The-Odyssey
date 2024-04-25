@@ -54,6 +54,7 @@ public class Game extends JPanel implements ActionListener {
 
     ArrayList<GameObject> Rocks = new ArrayList<GameObject>();
     ArrayList<GameObject> Clouds = new ArrayList<GameObject>();
+    ArrayList<GameObject> WaterObjs = new ArrayList<GameObject>();
     ArrayList<GameObject> GameObjectsToRender = new ArrayList<GameObject>();
 
     // Cooldown Vars
@@ -181,8 +182,8 @@ public class Game extends JPanel implements ActionListener {
         }
 
         // Creates Water objs.
-        for (int i = 0; i < Frame.getWidth(); i += Water.getWidth(Frame)) {
-            new GameObject(i, Frame.getHeight() / 2 + (int) (Trireme.getHeight(Frame) / 1.5f), Water);
+        for (int i = -Water.getWidth(Frame); i < Frame.getWidth(); i += Water.getWidth(Frame)) {
+            WaterObjs.add(new GameObject(i, Frame.getHeight() / 2 + (int) (Trireme.getHeight(Frame) / 1.5f), Water));
         }
 
         // Custom Objs.
@@ -203,9 +204,26 @@ public class Game extends JPanel implements ActionListener {
     void Update() {
 
         // Updates TriremeObj to move
-        TriremeObj.PosX -= 1;
-        TriremeObj1.PosX -= 1.25f;
-        TriremeObj2.PosX -= 1.35f;
+        if (TriremeObj.PosX > Frame.getWidth() / 2) {
+            TriremeObj.PosX -= 1;
+            TriremeObj1.PosX -= 1.25f;
+            TriremeObj2.PosX -= 1.35f;
+        } else {
+            for (GameObject Obj : WaterObjs) {
+                Obj.PosX += 1.25f;
+                if (Obj.PosX >= Frame.getWidth()) {
+                    Obj.PosX = -Obj.img.getWidth(Frame);
+                }
+            }
+            for (GameObject Obj : Rocks) {
+                Obj.PosX += 1.25f;
+                if (Obj.PosX >= Frame.getWidth()) {
+                    Obj.PosX = -Obj.img.getWidth(Frame);
+                    Obj.PosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.54));
+                    System.err.println(Rocks.size());
+                }
+            }
+        }
 
         // Moves Sun
         SunObj.PosX += 0.15;
@@ -215,15 +233,6 @@ public class Game extends JPanel implements ActionListener {
             Obj.PosX -= Obj.ObjSpeed;
             if (Obj.PosX <= -Obj.img.getWidth(Frame)) {
                 Obj.PosX = Frame.getWidth() + Obj.img.getWidth(Frame);
-            }
-        }
-
-        // Resets Trireme and rocks when it gets to xpos 0
-        if (TriremeObj.img != null && TriremeObj.PosX <= -TriremeObj.img.getWidth(Frame)) {
-            TriremeObj.PosX = Frame.getWidth() + TriremeObj.img.getWidth(Frame);
-            for (GameObject Obj : Rocks) {
-                Obj.PosX = (int) (Math.random() * Rocks.size()) + (int) (Math.random() * Frame.getWidth());
-                Obj.PosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.65));
             }
         }
 
