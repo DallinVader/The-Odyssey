@@ -1,34 +1,74 @@
+import javax.swing.JFrame;
+import java.io.File;
+import javax.swing.*;
+//Graphics Imports.
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
+import javax.swing.ImageIcon;
 import java.awt.Image;
+//Font Imports.
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
+//Audio Imports
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.FloatControl;
-import javax.swing.*;
 
 public class Game extends JPanel implements ActionListener {
     JFrame Frame;
 
+    // Background Color var.
+    Color BackgroundColor = new Color(95, 205, 228);
+
+    // Image Vars;
     ImageIcon TrireimGif;
-    Image Trireim;
+    Image Trireme;
     Image Water;
     Image ImgRocks;
     Image Sun;
+    Image LargeCloud;
+
+    float TimeInSeconds;
+    float TimeCallAmount;
+
+    // TextObj Vars.
+    ArrayList<TextObj> AllTextObjs = new ArrayList<TextObj>();
+    TextObj Title;
+    TextObj UnderTitle;
+    TextObj PressEnter;
+
+    // Font Vars.
+    Font PixleFont;
+
+    // Custom GameObject Vars
+    GameObject TriremeObj;
+    GameObject TriremeObj1;
+    GameObject TriremeObj2;
+    GameObject SunObj;
+
+    ArrayList<GameObject> Rocks = new ArrayList<GameObject>();
+    ArrayList<GameObject> Clouds = new ArrayList<GameObject>();
+    ArrayList<GameObject> GameObjectsToRender = new ArrayList<GameObject>();
+
+    // Cooldown Vars
+    float CurrentCoolDownWater = 0;
+    float CurrentCoolDownPressEnter = 50;
+    int T;
+    boolean TitleScreenVoiceActive = false;
+    boolean IncreaseAlpha = true;
 
     Game(JFrame frame) {
         this.Frame = frame;
         setBackground(new Color(193, 228, 254));
 
         LoadImages();
+        LoadFonts();
 
         Start();
         Timer timer = new Timer(8, this);
@@ -39,14 +79,22 @@ public class Game extends JPanel implements ActionListener {
     }
 
     void LoadImages() {
-        Trireim = new ImageIcon(getClass().getResource("Assets/Images/Trireme.gif")).getImage();
+        Trireme = new ImageIcon(getClass().getResource("Assets/Images/Trireme.gif")).getImage();
         Sun = new ImageIcon(getClass().getResource("Assets/Images/Sun.gif")).getImage();
         Water = new ImageIcon(getClass().getResource("Assets/Images/Water.gif")).getImage();
         ImgRocks = new ImageIcon(getClass().getResource("Assets/Images/Rock.gif")).getImage();
-        if (Trireim != null) {
-            System.err.println("It worked image");
-        }
+        LargeCloud = new ImageIcon(getClass().getResource("Assets/Images/CloudLarge.png")).getImage();
 
+    }
+
+    void LoadFonts() {
+        try {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            PixleFont = Font.createFont(Font.TRUETYPE_FONT, new File("Assets/Fonts/PixleFont.ttf")).deriveFont(64f);
+            ge.registerFont(PixleFont);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+        }
     }
 
     public void PlayMusic(String location) {
@@ -64,44 +112,122 @@ public class Game extends JPanel implements ActionListener {
         }
     }
 
-    float TimeInSeconds;
-    float TimeCallAmount;
-    int StartPos;
-
-    ArrayList<GameObject> Rocks = new ArrayList<GameObject>();
-
     public class GameObject {
+        float PosX;
+        float PosY;
+        float ObjSpeed;
+
+        Image img;
+
+        GameObject(int X, int Y, Image img, float Speed) {
+            this.PosX = X;
+            this.PosY = Y;
+            this.ObjSpeed = Speed;
+
+            if (img != null) {
+                this.img = img;
+                GameObjectsToRender.add(this);
+            }
+        }
+
+        GameObject(int X, int Y, Image img) {
+            this.PosX = X;
+            this.PosY = Y;
+
+            if (img != null) {
+                this.img = img;
+                GameObjectsToRender.add(this);
+            }
+        }
+    }
+
+    public class TextObj {
         int PosX;
         int PosY;
 
-        GameObject(int X, int Y) {
-            PosX = X;
-            PosY = Y;
+        String DisplayText;
+        Font FontToUse;
+
+        Color TextColor;
+
+        TextObj(int x, int y, String Text, Font FontToUse, Color TextColor) {
+            this.PosX = x;
+            this.PosY = y;
+            this.DisplayText = Text;
+            this.FontToUse = FontToUse;
+            this.TextColor = TextColor;
+
+            AllTextObjs.add(this);
         }
+
     }
 
     void Start() {
-        StartPos = Frame.getWidth();
-        System.err.println("Starting Game");
+        System.err.println("Start function has played so it should be all good.... Hopefully.");
         PlayMusic("Assets/Sounds/The_Oddyessy.wav");
-        System.err.println(Frame.getWidth());
+
+        // Creates Rock objs.
         for (int i = 0; i < 10; i++) {
-            Rocks.add(new GameObject(i + (int) (Math.random() * StartPos),
-                    (int) (Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.5)));
+            int RockPosX = i + (int) (Math.random() * Frame.getWidth());
+            int RockPosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.65));
+            Rocks.add(new GameObject(RockPosX, RockPosY, ImgRocks));
         }
+
+        // creates Cloud objs.
+        for (int i = 0; i < 10; i++) {
+            int RockPosX = i + (int) (Math.random() * Frame.getWidth());
+            int RockPosY = (int) ((Math.random() * Frame.getHeight() / 8));
+            Clouds.add(new GameObject(RockPosX, RockPosY, LargeCloud, (float) (Math.random() * 0.5f)));
+        }
+
+        // Creates Water objs.
+        for (int i = 0; i < Frame.getWidth(); i += Water.getWidth(Frame)) {
+            new GameObject(i, Frame.getHeight() / 2 + (int) (Trireme.getHeight(Frame) / 1.5f), Water);
+        }
+
+        // Custom Objs.
+        SunObj = new GameObject(Sun.getWidth(Frame), Sun.getHeight(Frame), Sun);
+        TriremeObj = new GameObject(Frame.getWidth(), Frame.getHeight() / 2 + 80, Trireme);
+        TriremeObj1 = new GameObject(Frame.getWidth() + 150, Frame.getHeight() / 2 + 125, Trireme);
+        TriremeObj2 = new GameObject(Frame.getWidth() + 95, Frame.getHeight() / 2 + 45, Trireme);
+
+        // Custom text.
+        Title = new TextObj(Frame.getWidth(), Frame.getHeight() / 4, "The Odyssey", PixleFont, Color.black);
+        UnderTitle = new TextObj(Frame.getWidth(), Frame.getHeight() / 4 + 64, "Legends of Odysseus", PixleFont,
+                Color.black);
+
+        PressEnter = new TextObj(Frame.getWidth(), (int) (Frame.getHeight() / 1.4), "Press Enter", PixleFont,
+                Color.black);
     }
-
-    float CurrentCoolDownWater = 0;
-
-    float CurrentCoolDownPressEnter = 50;
-
-    boolean TitleScreenVoice = false;
 
     void Update() {
 
-        if (StartPos <= 0 - Trireim.getWidth(Frame)) {
-            StartPos = Frame.getWidth();
+        // Updates TriremeObj to move
+        TriremeObj.PosX -= 1;
+        TriremeObj1.PosX -= 1.25f;
+        TriremeObj2.PosX -= 1.35f;
+
+        // Moves Sun
+        SunObj.PosX += 0.15;
+
+        // Moves Clouds
+        for (GameObject Obj : Clouds) {
+            Obj.PosX -= Obj.ObjSpeed;
+            if (Obj.PosX <= -Obj.img.getWidth(Frame)) {
+                Obj.PosX = Frame.getWidth() + Obj.img.getWidth(Frame);
+            }
         }
+
+        // Resets Trireme and rocks when it gets to xpos 0
+        if (TriremeObj.img != null && TriremeObj.PosX <= -TriremeObj.img.getWidth(Frame)) {
+            TriremeObj.PosX = Frame.getWidth() + TriremeObj.img.getWidth(Frame);
+            for (GameObject Obj : Rocks) {
+                Obj.PosX = (int) (Math.random() * Rocks.size()) + (int) (Math.random() * Frame.getWidth());
+                Obj.PosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.65));
+            }
+        }
+
+        // Timers for playing sound.
         if (TimeInSeconds >= CurrentCoolDownWater) {
             CurrentCoolDownWater += 2.25f;
             PlayMusic("Assets/Sounds/Water.wav");
@@ -112,13 +238,28 @@ public class Game extends JPanel implements ActionListener {
             PlayMusic("Assets/Sounds/PressEnterToStart.wav");
         }
 
-        if (TimeInSeconds > 5 && !TitleScreenVoice) {
+        if (!TitleScreenVoiceActive && TimeInSeconds > 5) {
             PlayMusic("Assets/Sounds/LegendsOfOdysseus.wav");
-            TitleScreenVoice = true;
+            TitleScreenVoiceActive = true;
         }
 
+        // In Game Timer.
         TimeInSeconds = TimeCallAmount / 31.25f;
         TimeCallAmount++;
+
+        // Fades in and out the PressEnter text.
+        if (T < 256 && IncreaseAlpha) {
+            PressEnter.TextColor = new Color(0, 0, 0, T += 2);
+            if (T >= 175) {
+                IncreaseAlpha = false;
+            }
+        } else if (T > 0) {
+            PressEnter.TextColor = new Color(0, 0, 0, T -= 2);
+            if (T <= 50) {
+                IncreaseAlpha = true;
+            }
+        }
+
     }
 
     @Override
@@ -128,23 +269,28 @@ public class Game extends JPanel implements ActionListener {
     }
 
     void Draw(Graphics g) {
-        StartPos -= 1;
-        g.setColor(new Color(95, 205, 228));
-        g.fillRect(0, Frame.getHeight() / 2 + 45, Frame.getWidth(), Trireim.getHeight(Frame) * 25);
+        // Sets background Color;
+        g.setColor(BackgroundColor);
 
-        for (int i = 0; i < Frame.getWidth(); i += Water.getWidth(Frame)) {
-            g.drawImage(Water, i, Frame.getHeight() / 2 + (int) (Trireim.getHeight(Frame) / 1.5f), null);
+        // Creates sea background.
+        g.fillRect(0, Frame.getHeight() / 2 + 45, Frame.getWidth(), Trireme.getHeight(Frame) * 25);
+
+        // Draws all objects that have a image.
+        for (GameObject Obj : GameObjectsToRender) {
+            if (Obj.img != null) {
+                g.drawImage(Obj.img, (int) Obj.PosX, (int) Obj.PosY, null);
+            } else {
+                GameObjectsToRender.remove(Obj);
+            }
         }
-        for (int e = 0; e < Rocks.size(); e++) {
-            g.drawImage(ImgRocks, Rocks.get(e).PosX, Rocks.get(e).PosY, null);
+
+        // Use the custom font
+        for (TextObj textObj : AllTextObjs) {
+            g.setFont(textObj.FontToUse);
+            g.setColor(textObj.TextColor);
+            FontMetrics fm = g.getFontMetrics();
+            g.drawString(textObj.DisplayText, (textObj.PosX - fm.stringWidth(textObj.DisplayText)) / 2, textObj.PosY);
         }
-
-        g.drawImage(Trireim, StartPos, Frame.getHeight() / 2 + 80, null);
-        g.drawImage(Sun, Sun.getWidth(Frame), Sun.getHeight(Frame), null);
-
-        Font font = new Font("TimesRoman", Font.BOLD, 50);
-        g.setFont(font);
-        g.drawString("The Odyssey", Frame.getWidth() / 2, Frame.getHeight() / 3);
     }
 
     @Override
