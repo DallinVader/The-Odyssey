@@ -52,9 +52,8 @@ public class Game extends JPanel implements ActionListener {
     GameObject TriremeObj2;
     GameObject SunObj;
 
-    ArrayList<GameObject> Rocks = new ArrayList<GameObject>();
+    ArrayList<GameObject> BackgroundObjs = new ArrayList<GameObject>();
     ArrayList<GameObject> Clouds = new ArrayList<GameObject>();
-    ArrayList<GameObject> WaterObjs = new ArrayList<GameObject>();
     ArrayList<GameObject> GameObjectsToRender = new ArrayList<GameObject>();
 
     // Cooldown Vars
@@ -120,7 +119,7 @@ public class Game extends JPanel implements ActionListener {
 
         Image img;
 
-        GameObject(int X, int Y, Image img, float Speed) {
+        GameObject(float X, float Y, Image img, float Speed) {
             this.PosX = X;
             this.PosY = Y;
             this.ObjSpeed = Speed;
@@ -131,7 +130,7 @@ public class Game extends JPanel implements ActionListener {
             }
         }
 
-        GameObject(int X, int Y, Image img) {
+        GameObject(float X, float Y, Image img) {
             this.PosX = X;
             this.PosY = Y;
 
@@ -167,29 +166,35 @@ public class Game extends JPanel implements ActionListener {
         System.err.println("Start function has played so it should be all good.... Hopefully.");
         PlayMusic("Assets/Sounds/The_Oddyessy.wav");
 
-        // Creates Rock objs.
         for (int i = 0; i < 10; i++) {
+            // Creates Rock objs.
             int RockPosX = i + (int) (Math.random() * Frame.getWidth());
             int RockPosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.65));
-            Rocks.add(new GameObject(RockPosX, RockPosY, ImgRocks));
+            BackgroundObjs.add(new GameObject(RockPosX, RockPosY, ImgRocks));
+
+            // creates Cloud objs.
+            RockPosX = i + (int) (Math.random() * Frame.getWidth());
+            RockPosY = (int) ((Math.random() * Frame.getHeight() / 8));
+            Clouds.add(new GameObject(RockPosX, RockPosY, LargeCloud, (float) (Math.random() * 0.3f) + 0.2f));
         }
 
-        // creates Cloud objs.
-        for (int i = 0; i < 10; i++) {
-            int RockPosX = i + (int) (Math.random() * Frame.getWidth());
-            int RockPosY = (int) ((Math.random() * Frame.getHeight() / 8));
-            Clouds.add(new GameObject(RockPosX, RockPosY, LargeCloud, (float) (Math.random() * 0.5f)));
+        for (int i = 0; i < 0; i++) {
+            Clouds.add(
+                    new GameObject((float) (Math.random() * Frame.getWidth()),
+                            (float) (Math.random() * Frame.getHeight()), Trireme,
+                            (float) (Math.random() * 0.1f) + 0.05f));
         }
 
         // Creates Water objs.
         for (int i = -Water.getWidth(Frame); i < Frame.getWidth(); i += Water.getWidth(Frame)) {
-            WaterObjs.add(new GameObject(i, Frame.getHeight() / 2 + (int) (Trireme.getHeight(Frame) / 1.5f), Water));
+            BackgroundObjs
+                    .add(new GameObject(i, Frame.getHeight() / 2 + (int) (Trireme.getHeight(Frame) / 1.5f), Water));
         }
 
         // Custom Objs.
         SunObj = new GameObject(Sun.getWidth(Frame), Sun.getHeight(Frame), Sun);
         TriremeObj = new GameObject(Frame.getWidth(), Frame.getHeight() / 2 + 80, Trireme);
-        TriremeObj1 = new GameObject(Frame.getWidth() + 150, Frame.getHeight() / 2 + 125, Trireme);
+        TriremeObj1 = new GameObject(Frame.getWidth() + 130, Frame.getHeight() / 2 + 125, Trireme);
         TriremeObj2 = new GameObject(Frame.getWidth() + 95, Frame.getHeight() / 2 + 45, Trireme);
 
         // Custom text.
@@ -207,20 +212,13 @@ public class Game extends JPanel implements ActionListener {
         if (TriremeObj.PosX > Frame.getWidth() / 2) {
             TriremeObj.PosX -= 1;
             TriremeObj1.PosX -= 1.25f;
-            TriremeObj2.PosX -= 1.35f;
-        } else {
-            for (GameObject Obj : WaterObjs) {
+            TriremeObj2.PosX -= 1.15f;
+        }
+        if (TriremeObj.PosX < (Frame.getWidth() / 2) + 25) {
+            for (GameObject Obj : BackgroundObjs) {
                 Obj.PosX += 1.25f;
                 if (Obj.PosX >= Frame.getWidth()) {
                     Obj.PosX = -Obj.img.getWidth(Frame);
-                }
-            }
-            for (GameObject Obj : Rocks) {
-                Obj.PosX += 1.25f;
-                if (Obj.PosX >= Frame.getWidth()) {
-                    Obj.PosX = -Obj.img.getWidth(Frame);
-                    Obj.PosY = (int) ((Math.random() * Frame.getHeight() / 2) + (int) (Frame.getHeight() * 0.54));
-                    System.err.println(Rocks.size());
                 }
             }
         }
