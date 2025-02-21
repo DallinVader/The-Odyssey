@@ -26,6 +26,14 @@ public class Game extends JPanel implements ActionListener {
     // Background Color var.
     Color BackgroundColor = new Color(95, 205, 228);
 
+    // Game States
+    public static enum GameStates {
+        MainMenu,
+        Game
+    }
+
+    public static GameStates CurrentState = GameStates.MainMenu;
+
     // Image Vars;
     ImageIcon TrireimGif;
     Image Trireme;
@@ -63,8 +71,12 @@ public class Game extends JPanel implements ActionListener {
     boolean TitleScreenVoiceActive = false;
     boolean IncreaseAlpha = true;
 
+    final JTextField text;
+
     Game(JFrame frame) {
         this.Frame = frame;
+        text = new JTextField();
+
         setBackground(new Color(193, 228, 254));
 
         LoadImages();
@@ -164,8 +176,11 @@ public class Game extends JPanel implements ActionListener {
 
     void Start() {
         System.err.println("Start function has played so it should be all good.... Hopefully.");
-        PlayMusic("Assets/Sounds/The_Oddyessy.wav");
+        StartMainMenu();
+    }
 
+    void StartMainMenu() {
+        PlayMusic("Assets/Sounds/The_Oddyessy.wav");
         for (int i = 0; i < 10; i++) {
             // Creates Rock objs.
             int RockPosX = i + (int) (Math.random() * Frame.getWidth());
@@ -207,7 +222,17 @@ public class Game extends JPanel implements ActionListener {
     }
 
     void Update() {
+        switch (CurrentState) {
+            case MainMenu:
+                MainMenuUpdate();
+                break;
+            case Game:
+                GameLogic.GameUpdate();
+                break;
+        }
+    }
 
+    void MainMenuUpdate() {
         // Updates TriremeObj to move
         if (TriremeObj.PosX > Frame.getWidth() / 2) {
             TriremeObj.PosX -= 1;
@@ -266,16 +291,23 @@ public class Game extends JPanel implements ActionListener {
                 IncreaseAlpha = true;
             }
         }
-
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Draw(g);
+        switch (CurrentState) {
+            case MainMenu:
+                DrawMenu(g);
+                break;
+
+            case Game:
+                DrawGame(g);
+                break;
+        }
     }
 
-    void Draw(Graphics g) {
+    void DrawMenu(Graphics g) {
         // Sets background Color;
         g.setColor(BackgroundColor);
 
@@ -298,6 +330,21 @@ public class Game extends JPanel implements ActionListener {
             FontMetrics fm = g.getFontMetrics();
             g.drawString(textObj.DisplayText, (textObj.PosX - fm.stringWidth(textObj.DisplayText)) / 2, textObj.PosY);
         }
+    }
+
+    void DrawGame(Graphics g) {
+        g.setColor(BackgroundColor);
+
+        Frame.add(text);
+        Frame.setVisible(true);
+
+        text.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(text.getText());
+            }
+        });
+
     }
 
     @Override

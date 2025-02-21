@@ -20,5 +20,8 @@ public class App extends JFrame {
         Game game = new Game(frame);
         frame.add(game);
 
+        Inputs input = new Inputs();
+        frame.addKeyListener(input);
+
     }
 }
